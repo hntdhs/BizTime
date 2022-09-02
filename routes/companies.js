@@ -25,10 +25,18 @@ router.get("/:code", async function (req, res, next) {
   
       const compResult = await db.query(
             `SELECT code, name, description
-             FROM companies
+             FROM companies AS c
              WHERE code = $1`,
           [code]
       );
+
+      const industries = await db.query(
+        `SELECT code, industry
+        FROM industries_of_companies 
+        LEFT JOIN industries ON ind_code = code
+             WHERE comp_code = $1`, 
+        [code]
+      )
 
       const invResult = await db.query(
         `SELECT id
@@ -47,6 +55,7 @@ router.get("/:code", async function (req, res, next) {
   const invoices = invResult.rows;
 
   company.invoices = invoices.map(inv => inv.id);
+  company.industries = industries;
 
   return res.json({"company": company});
 }
@@ -75,6 +84,29 @@ router.post("/", async function (req, res, next) {
       return next(err);
     }
   });
+
+  router.post("/:companyCode/:industryCode", async function (req, res, next) {
+    let companyCode = req.params.companyCode;
+    let industryCode = req.params.industryCode;
+
+    await db.query(
+      `INSERT INTO industries_of_companies VALUES (
+        $1, $2
+      )`, [companyCode, industryCode]
+    )
+    return res.status(201);
+  
+  });
+
+  router.delete("/:companyCode/:industryCode", async function (req, res, next) {
+    let companyCode = req.params.companyCode;
+    let industryCode = req.params.industryCode;
+
+    await db.query(
+     `DELETE FROM industries_of_companies WHERE  comp_code=$1 AND ind_code=$2 `, [companyCode, industryCode]
+    )
+    return res.status(204);
+  })
 
   router.put("/:code", async function (req, res, next) {
     try {

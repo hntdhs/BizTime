@@ -5,9 +5,10 @@ const express = require("express");
 
 const app = express();
 const ExpressError = require("./expressError")
+const companieRoutes = require('./routes/companies.js');
 
 app.use(express.json());
-
+app.use('/companies', companieRoutes);
 
 /** 404 handler */
 
